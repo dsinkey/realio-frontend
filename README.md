@@ -47,7 +47,7 @@ Of course, the Application should be nice to look at :)
 
 The task should be completed by pushing the code to a new branch and opening a Pull Request on this repo
 
-For questions regarding the task, feel free to reach out at ab@dialectic.ch
+For questions regarding the task, feel free to reach out at samuel@realio.fund
 
 # React Stuff
 
