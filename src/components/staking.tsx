@@ -1,67 +1,124 @@
-import React, { useState, useEffect } from 'react'
-import { useWeb3Context } from 'web3-react'
+import React, { useState, useEffect, useMemo, useReducer } from 'react';
+import LinearProgress from '@mui/material/LinearProgress';
+import callUniSwapContract from '../web3/uniswapContract';
+import callBarnbridgeContract from '../web3/barnbridgeContract';
+import barnbridgeGetAddressBalance from '../web3/barnbridgeGetAddressBalance';
+import { SelectChangeEvent } from '@mui/material/Select';
+import AddressSelect from './Select';
+import adddressesStaked from '../addressesWithBond';
+import Card from '../components/Card';
+import { ACTIONS, reducer } from './reducer';
+import { getTotalRewardUSD, getAnnualPercentageYield } from './helper';
 
-// BarnBridge Staking Contract: 
-//  - https://etherscan.io/address/0xb0fa2beee3cf36a7ac7e99b885b48538ab364853#readContract
+const initalState = {
+    userBalance: 0,
+    userAPY: 0,
+    userRewardInUSD: 0,
+    bondPrice: 0,
+    lpTokenPrice: 0,
+    lpTokensStaked: 0,
+    totalValueOfPool: 0,
+    totalLPTokens: 0,
+};
 
-// Uniswap LP Token Contract: 
-//  - https://etherscan.io/address/0x6591c4bcd6d7a1eb4e537da8b78676c1576ba244#readContract
+const Staking = () => {
+    let [loading, setLoading] = useState(false);
+    let [state, dispatch] = useReducer(reducer, initalState);
+    const filteredAddresses = useMemo(() => {
+        return adddressesStaked.filter(
+            (adddress, index, list) => list.indexOf(adddress) === index
+        );
+    }, []);
+    let [address, setAddress] = useState(filteredAddresses[0]);
 
-//importing the interfaces of the smart contracts
-import barnbridge_staking from './contract-interfaces/barnbridge_staking.json' 
-import uniswap_bondusdc from './contract-interfaces/uniswap_bondusdc.json'
+    const handleChange = (event: SelectChangeEvent) => {
+        setAddress(event.target.value as string);
+    };
 
-//defining the addresses at which the contracts are deployed
-const BARNBRIDGE_STAKING_ADDR = "0xb0Fa2BeEe3Cf36a7Ac7E99B885b48538Ab364853"
-const UNISWAP_BONDUSDC_ADDR = "0x6591c4BcD6D7A1eb4E537DA8B78676C1576Ba244"
+    const updateUniswap = async () => {
+        const { bondPrice, lpTokenPrice, totalValueOfPool } =
+            await callUniSwapContract();
 
-//defining the address of our test user
-const USER_ADDR = "0xb91b0e319af35145871a364f24d55f01f30c615f"
+        dispatch({
+            type: ACTIONS.UPDATE_UNISWAP,
+            payload: { bondPrice, lpTokenPrice, totalValueOfPool },
+        });
+    };
 
-//Each Week 20'000 BOND Tokens are issued as rewards
-const BOND_ISSUED_YEARLY = 20000*52
+    const updateBarnBridge = async () => {
+        const { totalLPTokens } = await callBarnbridgeContract();
+        dispatch({
+            type: ACTIONS.UPDATE_TOTAL_LP_TOKENS,
+            payload: { totalLPTokens },
+        });
+    };
 
-export default function Staking (){
-
-    const context = useWeb3Context()
-
-    let [poolValue, setPoolValue] = useState(0);
-    let [userBalance, setUserBalance] = useState(0);
-
-    let uniswap_contract = new context.library.eth.Contract(uniswap_bondusdc, UNISWAP_BONDUSDC_ADDR)
-    let barnbridge_contract = new context.library.eth.Contract(barnbridge_staking, BARNBRIDGE_STAKING_ADDR)
-    
     useEffect(() => {
-        async function updateState() {
-            
-            // The getReserves method returns the amount of BOND tokens and the amount of USDC tokens
-            // in the pool
-            uniswap_contract.methods.getReserves().call((err:any, result:number[]) => {
-                // Uniswap liquidity pools have two sides, in this case BOND and USDC, the USD value of the two 
-                // sides is always equal, so we can get the amount of USDC in the pool and multiply it by 2
-                // to get the total USD value of the pool
+        updateBarnBridge();
+        updateUniswap();
+    }, []);
 
-                let bondReserves = result[0] / 10**18 // adjusting for 18 decimals positions
-                let usdcReserves = result[1] / 10**6 // adjusting for 6 decimals positions
-                let bondPrice = bondReserves / usdcReserves; // get price of BOND from pool reserves
-                setPoolValue(usdcReserves * 2)
-            })
+    useEffect(() => {
+        setLoading(true);
+        const updateAddressBalance = async () => {
+            if (state.bondPrice && state.lpTokenPrice && state.totalLPTokens) {
+                const lpTokensStaked = await barnbridgeGetAddressBalance(
+                    address
+                );
+                const liquityProvidedUSD = state.lpTokenPrice * lpTokensStaked;
+                const yearlyRewardUSD = getTotalRewardUSD(
+                    state.bondPrice,
+                    lpTokensStaked,
+                    state.totalLPTokens
+                );
+                const annualPercentageYield = getAnnualPercentageYield(
+                    yearlyRewardUSD,
+                    liquityProvidedUSD
+                );
 
-            // We get the amount of LP Tokens the user staked in the barnbridge contract
-            barnbridge_contract.methods.balanceOf(USER_ADDR, UNISWAP_BONDUSDC_ADDR).call((err:any, result:number) => {
-                setUserBalance(result / 10**18) // adjusting for 18 decimals positions
-            })
+                dispatch({
+                    type: ACTIONS.UPDATE_BARNBRIDGE,
+                    payload: {
+                        lpTokensStaked,
+                        userAPY: annualPercentageYield,
+                        userBalance: liquityProvidedUSD,
+                        userRewardInUSD: yearlyRewardUSD,
+                    },
+                });
+                setLoading(false);
+            }
+        };
+        updateAddressBalance();
+    }, [
+        address,
+        state.bondPrice,
+        state.lpTokenPrice,
+        state.totalLPTokens,
+        state.totalValueOfPool,
+    ]);
 
-        }
-        updateState();
-      }, []);
-
-    return(
+    return (
         <div>
-            <p>Uniswap BOND/USDC Pool Value: {poolValue} USD</p>
-            <p>User Ethereum Address: {USER_ADDR}</p>
-            <p>User LP Tokens staked in Barnbridge: {userBalance}</p>
+            <AddressSelect
+                options={filteredAddresses}
+                handleChange={handleChange}
+                address={address}
+            />
+            <Card
+                poolValue={state.totalValueOfPool}
+                address={address}
+                userBalance={state.userBalance}
+                userAPY={state.userAPY}
+                userRewardInUSD={state.userRewardInUSD}
+                lpTokensStaked={state.lpTokensStaked}
+            />
+            {loading ? (
+                <LinearProgress
+                    style={{ marginTop: 15, borderRadius: 5, height: 7 }}
+                />
+            ) : null}
         </div>
-    )
-}
+    );
+};
 
+export default Staking;

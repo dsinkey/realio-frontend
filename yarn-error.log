@@ -1,0 +1,78 @@
+Arguments: 
+  /Users/dustin/.nvm/versions/node/v16.18.1/bin/node /usr/local/Cellar/yarn/1.22.19/libexec/bin/yarn.js install
+
+PATH: 
+  /usr/local/opt/openjdk@17/bin:/Users/dustin/.local/share/solana/install/active_release/bin:/Users/dustin/.cargo/bin:/opt/local/bin:/opt/local/sbin:/Users/dustin/.asdf/shims:/usr/local/opt/asdf/libexec/bin:/Users/dustin/.poetry/bin:/Users/dustin/Downloads/google-cloud-sdk/bin:/Users/dustin/.nvm/versions/node/v16.18.1/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+
+Yarn version: 
+  1.22.19
+
+Node version: 
+  16.18.1
+
+Platform: 
+  darwin x64
+
+Trace: 
+  SyntaxError: /Users/dustin/Documents/Realio/front-end-recruitment-task/package.json: Unexpected token } in JSON at position 638
+      at JSON.parse (<anonymous>)
+      at /usr/local/Cellar/yarn/1.22.19/libexec/lib/cli.js:1629:59
+      at Generator.next (<anonymous>)
+      at step (/usr/local/Cellar/yarn/1.22.19/libexec/lib/cli.js:310:30)
+      at /usr/local/Cellar/yarn/1.22.19/libexec/lib/cli.js:321:13
+
+npm manifest: 
+  {
+    "name": "web3-test",
+    "version": "0.1.0",
+    "private": true,
+    "dependencies": {
+      "@mui/material": "^5.12.0",
+      "@testing-library/jest-dom": "^5.11.4",
+      "@testing-library/react": "^11.1.0",
+      "@testing-library/user-event": "^12.1.10",
+      "@typechain/ethers-v5": "^10.2.0",
+      "@types/jest": "^26.0.15",
+      "@types/node": "^12.0.0",
+      "@types/react": "^18.0.34",
+      "@types/react-dom": "^18.0.11",
+      "ethers": "5.7.2",
+      "react": "^18.2.0",
+      "react-async": "^10.0.1",
+      "react-dom": "^18.2.0",
+      "react-scripts": "4.0.3",
+      "typechain": "^8.1.1",
+      "typescript": "^4.1.2",
+      "web-vitals": "^1.0.1",
+    },
+    "scripts": {
+      "start": "react-scripts start",
+      "build": "react-scripts build",
+      "test": "react-scripts test",
+      "eject": "react-scripts eject"
+    },
+    "eslintConfig": {
+      "extends": [
+        "react-app",
+        "react-app/jest"
+      ]
+    },
+    "browserslist": {
+      "production": [
+        ">0.2%",
+        "not dead",
+        "not op_mini all"
+      ],
+      "development": [
+        "last 1 chrome version",
+        "last 1 firefox version",
+        "last 1 safari version"
+      ]
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile

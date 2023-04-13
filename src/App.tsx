@@ -1,35 +1,36 @@
-import React from 'react';
-import './App.css';
-import Web3Provider from 'web3-react'
-import { Connectors } from 'web3-react'
-import Web3 from 'web3'
+import React, { useState, ChangeEvent } from 'react';
+import Staking from './components/staking';
 
-import Activator from './web3/connector'
-
-const { NetworkOnlyConnector } = Connectors
-
-
+import { Box } from '@mui/material';
+import Container from '@mui/material/Container';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { Paper } from '@mui/material';
+import NavBar from './components/NavBar';
 
 function App() {
+    let [darkMode, setDarkMode] = useState(false);
 
-  const Infura = new NetworkOnlyConnector({
-    providerURL: 'https://mainnet.infura.io/v3/581996b3a5b944949630f2535e9bb59b'
-  })
-   
-  const connectors = { Infura }
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setDarkMode(event.target.checked);
+    };
 
-
-  return (
-    <div>
-      <Web3Provider
-        connectors={connectors} libraryName={'web3.js'} web3Api={Web3}
-      >
-
-      <Activator/>
-
-      </Web3Provider>
-    </div>
-  );
+    const theme = createTheme({
+        palette: {
+            mode: darkMode ? 'dark' : 'light',
+        },
+    });
+    return (
+        <ThemeProvider theme={theme}>
+            <Paper style={{ height: '100vh' }}>
+                <NavBar handleChange={handleChange} darkMode={darkMode} />
+                <Container style={{ marginTop: 15 }}>
+                    <Box>
+                        <Staking />
+                    </Box>
+                </Container>
+            </Paper>
+        </ThemeProvider>
+    );
 }
 
 export default App;
